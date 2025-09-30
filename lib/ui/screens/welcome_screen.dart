@@ -16,7 +16,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     return Scaffold(
       body: Stack(children: [
         Positioned.fill(child: Image.asset('images/3.webp', fit: BoxFit.cover)),
-        Positioned.fill(child: Container(color: Colors.black.withOpacity(0.55))),
+  Positioned.fill(child: Container(color: Colors.black.withValues(alpha: 0.55))),
         SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(20),

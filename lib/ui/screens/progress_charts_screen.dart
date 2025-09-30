@@ -6,6 +6,7 @@ import '../../models/exercise.dart';
 import '../../services/repositories.dart';
 import '../../services/providers/auth_provider.dart' as local_auth;
 import '../widgets/common.dart';
+import '../widgets/branded_scaffold.dart';
 
 class ProgressChartsScreen extends StatefulWidget {
   const ProgressChartsScreen({super.key});
@@ -18,11 +19,9 @@ class _ProgressChartsScreenState extends State<ProgressChartsScreen> {
   @override
   Widget build(BuildContext context) {
     final uid = context.watch<local_auth.AuthProvider?>()?.uid;
-    return Scaffold(
+    return BrandedScaffold(
       appBar: AppBar(title: const Text('Progress Charts')),
-      body: Padding(
-        padding: const EdgeInsets.all(12),
-        child: uid == null
+      body: uid == null
             ? const EmptyState('Sign-in required')
             : Column(children: [
                 SizedBox(
@@ -76,7 +75,7 @@ class _ProgressChartsScreenState extends State<ProgressChartsScreen> {
                                         isCurved: true,
                                         color: Theme.of(context).colorScheme.primary,
                                         barWidth: 3,
-                                        dotData: const FlDotData(show: false),
+                                        dotData: FlDotData(show: true),
                                         spots: points,
                                       ),
                                     ],
@@ -88,7 +87,6 @@ class _ProgressChartsScreenState extends State<ProgressChartsScreen> {
                         ),
                 ),
               ]),
-      ),
     );
   }
 }

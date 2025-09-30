@@ -1,12 +1,15 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import '../../services/repositories.dart';
 import '../../models/workout.dart';
 import '../../models/body_measurement.dart';
 import '../../models/progress_photo.dart';
 import '../../services/providers/auth_provider.dart';
 import '../widgets/common.dart';
+import '../widgets/branded_scaffold.dart';
 
 class ProgressHubScreen extends StatelessWidget {
   const ProgressHubScreen({super.key});
@@ -15,10 +18,9 @@ class ProgressHubScreen extends StatelessWidget {
     final uid = context.watch<AuthProvider?>()?.uid;
     if (uid == null) return const Scaffold(body: Center(child: Text('Sign-in required')));
     final monthStart = DateTime(DateTime.now().year, DateTime.now().month, 1);
-    return Scaffold(
+    return BrandedScaffold(
       appBar: AppBar(title: const Text('Progress')),
       body: ListView(
-        padding: const EdgeInsets.all(12),
         children: [
           SectionCard(
             title: 'Monthly Report',
@@ -94,17 +96,52 @@ class ProgressHubScreen extends StatelessWidget {
                 alignment: Alignment.centerRight,
                 child: TextButton.icon(
                   onPressed: () async {
-                    final c = TextEditingController();
-                    final d = await showDialog<double?>(
+                    final weight = TextEditingController();
+                    final chest = TextEditingController();
+                    final waist = TextEditingController();
+                    final hips = TextEditingController();
+                    final arm = TextEditingController();
+                    final thigh = TextEditingController();
+                    final m = await showDialog<BodyMeasurement?>(
                       context: context,
                       builder: (ctx) => AlertDialog(
-                        title: const Text('Add weight (kg)'),
-                        content: TextField(controller: c, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
-                        actions: [TextButton(onPressed: ()=>Navigator.pop(ctx), child: const Text('Cancel')), FilledButton(onPressed: ()=>Navigator.pop(ctx, double.tryParse(c.text)), child: const Text('Save'))],
+                        title: const Text('Add Measurements'),
+                        content: SizedBox(
+                          width: 380,
+                          child: SingleChildScrollView(
+                            child: Column(mainAxisSize: MainAxisSize.min, children: [
+                              TextField(controller: weight, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Weight (kg)')),
+                              Row(children: [
+                                Expanded(child: TextField(controller: chest, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Chest (cm)'))),
+                                const SizedBox(width: 8),
+                                Expanded(child: TextField(controller: waist, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Waist (cm)'))),
+                              ]),
+                              Row(children: [
+                                Expanded(child: TextField(controller: hips, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Hips (cm)'))),
+                                const SizedBox(width: 8),
+                                Expanded(child: TextField(controller: arm, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Arm (cm)'))),
+                              ]),
+                              TextField(controller: thigh, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Thigh (cm)')),
+                            ]),
+                          ),
+                        ),
+                        actions: [
+                          TextButton(onPressed: ()=>Navigator.pop(ctx), child: const Text('Cancel')),
+                          FilledButton(onPressed: ()=>Navigator.pop(ctx, BodyMeasurement(
+                            id: '',
+                            date: DateTime.now(),
+                            weightKg: double.tryParse(weight.text) ?? 0,
+                            chest: double.tryParse(chest.text),
+                            waist: double.tryParse(waist.text),
+                            hips: double.tryParse(hips.text),
+                            arm: double.tryParse(arm.text),
+                            thigh: double.tryParse(thigh.text),
+                          )), child: const Text('Save'))
+                        ],
                       ),
                     );
-                    if (d != null) {
-                      await BodyMeasurementsRepository().add(uid, BodyMeasurement(id: '', date: DateTime.now(), weightKg: d));
+                    if (m != null) {
+                      await BodyMeasurementsRepository().add(uid, m);
                     }
                   },
                   icon: const Icon(Icons.add), label: const Text('Add Measurement'),
@@ -128,11 +165,29 @@ class ProgressHubScreen extends StatelessWidget {
                     separatorBuilder: (_, __) => const SizedBox(width: 8),
                     itemBuilder: (_, i) => ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: Image.asset('images/1.jpeg', fit: BoxFit.cover), // placeholder thumbnail
+                      child: Image.network(list[i].storagePath, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.image_not_supported)),
                     ),
                   );
                 },
               ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerRight,
+            child: FilledButton.icon(
+              icon: const Icon(Icons.add_a_photo_rounded),
+              label: const Text('Add Photo'),
+              onPressed: () async {
+                final picker = ImagePicker();
+                final picked = await picker.pickImage(source: ImageSource.gallery, maxWidth: 1600);
+                if (picked == null) return;
+                final name = 'photos/${DateTime.now().millisecondsSinceEpoch}_${picked.name}';
+                final ref = FirebaseStorage.instance.ref().child('users').child(uid).child(name);
+                await ref.putData(await picked.readAsBytes());
+                final url = await ref.getDownloadURL();
+                await ProgressPhotosRepository().add(uid, ProgressPhoto(id: '', date: DateTime.now(), storagePath: url));
+              },
             ),
           ),
           const SizedBox(height: 8),

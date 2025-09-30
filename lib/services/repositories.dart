@@ -9,6 +9,10 @@ import '../models/steps.dart';
 import '../models/run.dart';
 import '../models/body_measurement.dart';
 import '../models/progress_photo.dart';
+import '../models/tutorial.dart';
+import '../models/routine.dart';
+import '../models/water.dart';
+import '../models/sleep.dart';
 
 class _BaseRepo {
   final FirebaseFirestore db = FirebaseFirestore.instance;
@@ -94,6 +98,14 @@ class WorkoutRepository extends _BaseRepo {
     }
     return streak;
   }
+
+  Stream<List<WorkoutSession>> byRange(String uid, DateTime start, DateTime end) {
+    return _col(uid)
+        .where('date', isGreaterThanOrEqualTo: start.toIso8601String())
+        .where('date', isLessThan: end.toIso8601String())
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => WorkoutSession.fromMap(d.id, d.data())).toList());
+  }
 }
 
 class NutritionRepository extends _BaseRepo {
@@ -129,11 +141,24 @@ class PRRepository extends _BaseRepo {
     await _col(uid).doc(pr.id).set(pr.toMap());
   }
 
+  // All PRs ordered by date (newest first) to avoid composite index requirements
   Stream<List<PRRecord>> all(String uid) => _col(uid)
-      .orderBy('exerciseName')
-      .orderBy('weight', descending: true)
+      .orderBy('date', descending: true)
       .snapshots()
       .map((snap) => snap.docs.map((d) => PRRecord.fromMap(d.id, d.data())).toList());
+
+  // Best PR for an exercise by name: higher weight wins; if equal weight, higher reps wins
+  Future<PRRecord?> bestForExercise(String uid, String exerciseName) async {
+    final q = await _col(uid)
+        .where('exerciseName', isEqualTo: exerciseName)
+        .orderBy('weight', descending: true)
+        .orderBy('reps', descending: true)
+        .limit(1)
+        .get();
+    if (q.docs.isEmpty) return null;
+    final d = q.docs.first;
+    return PRRecord.fromMap(d.id, d.data());
+  }
 }
 
 class UserProfileRepository extends _BaseRepo {
@@ -144,7 +169,9 @@ class UserProfileRepository extends _BaseRepo {
       UserProfile.fromMap(uid, d.data() ?? {}));
 
   Future<void> update(String uid, UserProfile profile) async {
-    await _doc(uid).set(profile.toMap(), SetOptions(merge: true));
+    final data = profile.toMap()
+      ..removeWhere((key, value) => value == null);
+    await _doc(uid).set(data, SetOptions(merge: true));
   }
 }
 
@@ -203,6 +230,14 @@ class StepsRepository extends _BaseRepo {
         .snapshots()
         .map((s) => s.docs.map((d) => StepsEntry.fromMap(d.id, d.data())).toList());
   }
+
+  Stream<List<StepsEntry>> byRange(String uid, DateTime start, DateTime end) {
+    return _col(uid)
+        .where('date', isGreaterThanOrEqualTo: start.toIso8601String())
+        .where('date', isLessThan: end.toIso8601String())
+        .snapshots()
+        .map((s) => s.docs.map((d) => StepsEntry.fromMap(d.id, d.data())).toList());
+  }
 }
 
 class RunRepository extends _BaseRepo {
@@ -246,3 +281,111 @@ class ProgressPhotosRepository extends _BaseRepo {
       .snapshots()
       .map((s) => s.docs.map((d) => ProgressPhoto.fromMap(d.id, d.data())).toList());
 }
+
+class FoodCacheRepository extends _BaseRepo {
+  CollectionReference<Map<String, dynamic>> _col(String uid) =>
+      db.collection(userPrefix).doc(uid).collection('food_cache');
+
+  Future<Map<String, dynamic>?> get(String uid, String barcode) async {
+    final doc = await _col(uid).doc(barcode).get();
+    return doc.data();
+  }
+
+  Future<void> upsert(String uid, String barcode, Map<String, dynamic> data) async {
+    await _col(uid).doc(barcode).set(data, SetOptions(merge: true));
+  }
+}
+
+class TutorialRepository extends _BaseRepo {
+  CollectionReference<Map<String, dynamic>> _colGlobal() => db.collection('tutorials');
+  // Optionally user overrides under users/{uid}/tutorials
+  CollectionReference<Map<String, dynamic>> _colUser(String uid) => db.collection(userPrefix).doc(uid).collection('tutorials');
+
+  Stream<List<Tutorial>> allGlobal() => _colGlobal()
+      .orderBy('title')
+      .snapshots()
+      .map((s) => s.docs.map((d) => Tutorial.fromMap(d.id, d.data())).toList());
+
+  Stream<List<Tutorial>> allForUser(String uid) => _colUser(uid)
+      .orderBy('title')
+      .snapshots()
+      .map((s) => s.docs.map((d) => Tutorial.fromMap(d.id, d.data())).toList());
+
+  Future<void> upsertGlobal(Tutorial t) async {
+    await _colGlobal().doc(t.id).set(t.toMap(), SetOptions(merge: true));
+  }
+}
+
+class RoutinesRepository extends _BaseRepo {
+  CollectionReference<Map<String, dynamic>> _col(String uid) =>
+      db.collection(userPrefix).doc(uid).collection('routines');
+
+  Stream<List<Routine>> all(String uid) => _col(uid)
+      .orderBy('name')
+      .snapshots()
+      .map((s) => s.docs.map((d) => Routine.fromMap(d.id, d.data())).toList());
+
+  Future<void> upsert(String uid, Routine r) async {
+    await _col(uid).doc(r.id).set(r.toMap(), SetOptions(merge: true));
+  }
+
+  Future<void> delete(String uid, String id) async {
+    await _col(uid).doc(id).delete();
+  }
+}
+
+class WaterRepository extends _BaseRepo {
+  CollectionReference<Map<String, dynamic>> _col(String uid) =>
+      db.collection(userPrefix).doc(uid).collection('water');
+
+  Future<void> add(String uid, WaterEntry e) async {
+    await _col(uid).add(e.toMap());
+  }
+
+  Stream<List<WaterEntry>> byDay(String uid, DateTime day) {
+    final start = DateTime(day.year, day.month, day.day);
+    final end = start.add(const Duration(days: 1));
+    return _col(uid)
+        .where('date', isGreaterThanOrEqualTo: start.toIso8601String())
+        .where('date', isLessThan: end.toIso8601String())
+        .snapshots()
+        .map((s) => s.docs.map((d) => WaterEntry.fromMap(d.id, d.data())).toList());
+  }
+
+  Stream<List<WaterEntry>> byRange(String uid, DateTime start, DateTime end) {
+    return _col(uid)
+        .where('date', isGreaterThanOrEqualTo: start.toIso8601String())
+        .where('date', isLessThan: end.toIso8601String())
+        .snapshots()
+        .map((s) => s.docs.map((d) => WaterEntry.fromMap(d.id, d.data())).toList());
+  }
+}
+
+class SleepRepository extends _BaseRepo {
+  CollectionReference<Map<String, dynamic>> _col(String uid) =>
+      db.collection(userPrefix).doc(uid).collection('sleep');
+
+  Future<void> add(String uid, SleepEntry e) async {
+    await _col(uid).add(e.toMap());
+  }
+
+  Stream<List<SleepEntry>> byDay(String uid, DateTime day) {
+    final start = DateTime(day.year, day.month, day.day);
+    final end = start.add(const Duration(days: 1));
+    return _col(uid)
+        .where('date', isGreaterThanOrEqualTo: start.toIso8601String())
+        .where('date', isLessThan: end.toIso8601String())
+        .snapshots()
+        .map((s) => s.docs.map((d) => SleepEntry.fromMap(d.id, d.data())).toList());
+  }
+
+  Stream<List<SleepEntry>> byRange(String uid, DateTime start, DateTime end) {
+    return _col(uid)
+        .where('date', isGreaterThanOrEqualTo: start.toIso8601String())
+        .where('date', isLessThan: end.toIso8601String())
+        .snapshots()
+        .map((s) => s.docs.map((d) => SleepEntry.fromMap(d.id, d.data())).toList());
+  }
+}
+
+// (removed duplicate StepsRepository definition)

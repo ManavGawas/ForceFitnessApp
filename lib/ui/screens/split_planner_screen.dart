@@ -12,7 +12,51 @@ class SplitPlannerScreen extends StatelessWidget {
     final uid = context.watch<AuthProvider?>()?.uid;
     if (uid == null) return const Scaffold(body: Center(child: Text('Not signed in')));
     return Scaffold(
-      appBar: AppBar(title: const Text('Weekly Split Planner')),
+      appBar: AppBar(
+        title: const Text('Weekly Split Planner'),
+        actions: [
+          IconButton(
+            tooltip: 'Import templates',
+            icon: const Icon(Icons.download_rounded),
+            onPressed: () async {
+              final ok = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Import sample splits'),
+                  content: const Text('Add a few ready-to-use weekly splits to get you started?'),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                    FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Import')),
+                  ],
+                ),
+              );
+              if (ok == true) {
+                final samples = <SplitPlan>[
+                  SplitPlan(id: '1', name: 'Push/Pull/Legs', days: {
+                    1: ['Bench Press','Overhead Press','Tricep Pushdown'],
+                    2: ['Deadlift','Lat Pulldown','Seated Row'],
+                    3: ['Back Squat','Leg Press','Calf Raise'],
+                    5: ['Incline Bench','Lateral Raises','Dips'],
+                    6: ['Barbell Row','Face Pull','Hammer Curl'],
+                  }),
+                  SplitPlan(id: '2', name: 'Upper/Lower', days: {
+                    1: ['Bench Press','Row','OHP'],
+                    2: ['Squat','RDL','Leg Curl'],
+                    4: ['Incline DB Press','Lat Pulldown','Curl'],
+                    5: ['Deadlift','Leg Press','Calf Raise'],
+                  }),
+                  SplitPlan(id: '3', name: 'Full Body Beginner', days: {
+                    1: ['Goblet Squat','Push-ups','Machine Row'],
+                    3: ['Leg Press','DB Press','Lat Pulldown'],
+                    5: ['RDL','Seated Press','Row Machine'],
+                  }),
+                ];
+                for (final p in samples) { await SplitRepository().create(uid, p); }
+              }
+            },
+          )
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           final nameController = TextEditingController();

@@ -12,7 +12,20 @@
           "package_name": "com.example.gymmate"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "182761446448-bdaddgku50t9dps7ihkj2e18pg4jp3fk.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.gymmate",
+            "certificate_hash": "0a9d297f156acb641cd1f59bae67a8724df178fb"
+          }
+        },
+        {
+          "client_id": "182761446448-7fd99985qvskde4j3615qrra9ecmm1v8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyB66gQwIStONWRMQSa45PGRpOu1YEzAJ8k"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "182761446448-7fd99985qvskde4j3615qrra9ecmm1v8.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "182761446448-npo55u779e3es4dg15a6hmuvketu0n27.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.gymmate"
+              }
+            }
+          ]
         }
       }
     },
@@ -31,7 +56,12 @@
           "package_name": "your.app.id"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "182761446448-7fd99985qvskde4j3615qrra9ecmm1v8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyB66gQwIStONWRMQSa45PGRpOu1YEzAJ8k"
@@ -39,7 +69,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "182761446448-7fd99985qvskde4j3615qrra9ecmm1v8.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "182761446448-npo55u779e3es4dg15a6hmuvketu0n27.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.gymmate"
+              }
+            }
+          ]
         }
       }
     }

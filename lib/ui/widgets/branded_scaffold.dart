@@ -29,7 +29,13 @@ class BrandedScaffold extends StatelessWidget {
           ),
         ),
         Container(
-          color: const Color(0x99000000),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0x99000000), Color(0xAA000000)],
+            ),
+          ),
         ),
         SafeArea(
           child: Padding(padding: padding, child: body),

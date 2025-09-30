@@ -9,9 +9,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:gymmate/main.dart';
+import 'package:gymmate/services/firebase_service.dart';
 
 void main() {
   testWidgets('App renders', (WidgetTester tester) async {
+    WidgetsFlutterBinding.ensureInitialized();
+    // Initialize Firebase so providers using FirebaseAuth don't throw in tests
+    try {
+      await FirebaseService.init();
+    } catch (_) {}
     await tester.pumpWidget(const GymMateApp());
     expect(find.byType(MaterialApp), findsOneWidget);
   });

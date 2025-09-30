@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../services/providers/auth_provider.dart';
 import '../../services/repositories.dart';
 import '../../models/run.dart';
+import '../../models/pr.dart';
 
 class RunTrackerScreen extends StatefulWidget {
   const RunTrackerScreen({super.key});
@@ -61,6 +62,22 @@ class _RunTrackerScreenState extends State<RunTrackerScreen> {
         path: _path,
       );
       await RunRepository().save(uid, run);
+      // Record PR for Running (by distance in km)
+      try {
+        final km = _distance / 1000.0;
+        final currentBest = await PRRepository().bestForExercise(uid, 'Running Distance');
+        final beats = currentBest == null || km > currentBest.weight || (km == currentBest.weight && _durationSec < currentBest.reps);
+        if (beats) {
+          await PRRepository().add(uid, PRRecord(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            exerciseId: 'running',
+            exerciseName: 'Running Distance',
+            date: DateTime.now(),
+            weight: km,
+            reps: _durationSec, // use reps field to store seconds for tie-break
+          ));
+        }
+      } catch (_) {}
     }
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Run saved')));

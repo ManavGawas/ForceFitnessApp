@@ -6,6 +6,7 @@ import 'services/providers/selected_date_provider.dart';
 import 'services/providers/tab_index_provider.dart';
 import 'ui/screens/auth/auth_gate.dart';
 import 'ui/theme.dart';
+import 'services/providers/pending_workout_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,10 +30,12 @@ class GymMateApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => SelectedDateProvider()),
         ChangeNotifierProvider(create: (_) => TabIndexProvider()),
+        ChangeNotifierProvider(create: (_) => PendingWorkoutProvider()),
       ],
       child: MaterialApp(
         title: 'GymMate',
         theme: AppTheme.light(),
+        debugShowCheckedModeBanner: false,
         home: const AuthGate(),
       ),
     );

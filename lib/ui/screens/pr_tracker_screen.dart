@@ -5,6 +5,7 @@ import '../../models/exercise.dart';
 import '../../services/repositories.dart';
 import '../../services/providers/auth_provider.dart' as local_auth;
 import '../widgets/common.dart';
+import '../widgets/branded_scaffold.dart';
 import 'package:share_plus/share_plus.dart';
 
 class PRTrackerScreen extends StatelessWidget {
@@ -12,14 +13,14 @@ class PRTrackerScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final uid = context.watch<local_auth.AuthProvider?>()?.uid;
-    return Scaffold(
+    return BrandedScaffold(
       appBar: AppBar(title: const Text('PR Tracker')),
       body: uid == null
           ? const EmptyState('Sign-in required')
           : StreamBuilder<List<PRRecord>>(
               stream: PRRepository().all(uid),
               builder: (context, snapshot) {
-                final items = snapshot.data ?? [];
+                final items = (snapshot.data ?? [])..sort((a,b)=>b.date.compareTo(a.date));
                 if (items.isEmpty) return const EmptyState('No PRs yet');
                 return ListView.separated(
                   itemCount: items.length,
